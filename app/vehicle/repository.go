@@ -1,18 +1,12 @@
-package product
+package vehicle
 
 import (
 	"context"
 	"microservicetest/domain"
 )
 
-// Repository interface for products (keeping existing for backward compatibility)
+// Repository defines the interface for vehicle data operations
 type Repository interface {
-	CreateProduct(ctx context.Context, product *domain.Product) error
-	GetProduct(ctx context.Context, id string) (*domain.Product, error)
-}
-
-// VehicleRepository defines the interface for vehicle data operations
-type VehicleRepository interface {
 	// Basic CRUD operations
 	GetVehicle(ctx context.Context, id string) (*domain.Vehicle, error)
 	GetVehicleByVIN(ctx context.Context, vin string) (*domain.Vehicle, error)

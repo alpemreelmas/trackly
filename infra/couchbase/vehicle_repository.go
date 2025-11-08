@@ -100,24 +100,19 @@ func (r *VehicleRepository) GetVehicleByVIN(ctx context.Context, vin string) (*d
 
 // CreateVehicle creates a new vehicle using atomic operations
 func (r *VehicleRepository) CreateVehicle(ctx context.Context, vehicle *domain.Vehicle) error {
-	// Set timestamps
 	now := time.Now()
 	vehicle.CreatedAt = now
 	vehicle.UpdatedAt = now
 
-	// Use atomic operations to ensure VIN uniqueness and update indexes
 	vinKey := "vin::" + vehicle.VIN
 	vinRef := map[string]string{"vehicle_id": vehicle.ID}
 
-	// Create both documents atomically using transactions
 	err := r.cluster.Transactions().Run(func(attempt *gocb.TransactionAttempt) error {
-		// Try to insert VIN reference first (this will fail if VIN exists)
 		_, err := attempt.Insert(r.collection, vinKey, vinRef)
 		if err != nil {
 			return err
 		}
 
-		// Insert the vehicle document
 		_, err = attempt.Insert(r.collection, vehicle.ID, vehicle)
 		if err != nil {
 			return err
@@ -171,29 +166,32 @@ func (r *VehicleRepository) DeleteVehicle(ctx context.Context, id string) error 
 
 // convertDBError converts Couchbase errors to application errors
 func (r *VehicleRepository) convertDBError(operation string, err error) error {
-	errMsg := strings.ToLower(err.Error())
-	
-	switch {
-	case errors.Is(err, gocb.ErrDocumentNotFound):
-		return apperrors.ErrResourceNotFound.WithCause(err)
-		
-	case errors.Is(err, gocb.ErrDocumentExists):
-		return apperrors.ErrResourceExists.WithCause(err)
-		
-	case strings.Contains(errMsg, "timeout") ||
-		 strings.Contains(errMsg, "deadline exceeded"):
-		return apperrors.ErrRequestTimeout.WithCause(err)
-		
-	case strings.Contains(errMsg, "connection") ||
-		 strings.Contains(errMsg, "network") ||
-		 strings.Contains(errMsg, "cluster"):
-		return apperrors.ErrDatabaseConnection.WithCause(err)
-		
-	case strings.Contains(errMsg, "authentication") ||
-		 strings.Contains(errMsg, "unauthorized"):
-		return apperrors.ErrUnauthorized.WithCause(err)
-		
-	default:
-		return apperrors.NewDatabaseError(operation, err)
-	}
+    var kvErr *gocb.KeyValueError
+    var timeoutErr *gocb.TimeoutError
+    var authErr *gocb.AuthenticationError
+
+    switch {
+    case errors.Is(err, gocb.ErrDocumentNotFound):
+        return apperrors.ErrResourceNotFound.WithCause(err)
+
+    case errors.Is(err, gocb.ErrDocumentExists):
+        return apperrors.ErrResourceExists.WithCause(err)
+
+    case errors.As(err, &timeoutErr):
+        return apperrors.ErrRequestTimeout.WithCause(timeoutErr)
+
+    case errors.As(err, &authErr):
+        return apperrors.ErrUnauthorized.WithCause(authErr)
+
+    case errors.As(err, &kvErr):
+        // You can even inspect kvErr.InnerError or kvErr.Context
+        if kvErr.StatusCode == gocb.StatusNetworkError {
+            return apperrors.ErrDatabaseConnection.WithCause(kvErr)
+        }
+        return apperrors.NewDatabaseError(operation, kvErr)
+
+    default:
+        // If we can’t categorize it, just wrap it.
+        return apperrors.NewDatabaseError(operation, err)
+    }
 }

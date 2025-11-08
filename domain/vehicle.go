@@ -403,7 +403,7 @@ func NewVehicle(vin, make, model string, year int, ownerID string) *Vehicle {
 	now := time.Now()
 	
 	return &Vehicle{
-		ID:        generateVehicleID(),
+		ID:        GenerateVehicleID(),
 		VIN:       vin,
 		Make:      make,
 		Model:     model,
@@ -420,7 +420,7 @@ func NewVehicle(vin, make, model string, year int, ownerID string) *Vehicle {
 // NewDocument creates a new document with default values
 func NewDocument(docType DocumentType, name, fileURL, fileName string, fileSize int64, uploadedBy string) *Document {
 	return &Document{
-		ID:         generateDocumentID(),
+		ID:         GenerateDocumentID(),
 		Type:       docType,
 		Name:       name,
 		FileURL:    fileURL,
@@ -435,7 +435,7 @@ func NewDocument(docType DocumentType, name, fileURL, fileName string, fileSize 
 // NewPicture creates a new picture with default values
 func NewPicture(picType PictureType, title, url, fileName string, fileSize int64, width, height int, uploadedBy string) *Picture {
 	return &Picture{
-		ID:         generatePictureID(),
+		ID:         GeneratePictureID(),
 		Type:       picType,
 		Title:      title,
 		URL:        url,
@@ -451,16 +451,14 @@ func NewPicture(picType PictureType, title, url, fileName string, fileSize int64
 }
 
 // Helper functions for ID generation (you can implement these based on your needs)
-func generateVehicleID() string {
-	// Implement your ID generation logic here
-	// For example, using UUID or custom format
+func GenerateVehicleID() string {
 	return "VEH_" + time.Now().Format("20060102150405")
 }
 
-func generateDocumentID() string {
+func GenerateDocumentID() string {
 	return "DOC_" + time.Now().Format("20060102150405")
 }
 
-func generatePictureID() string {
+func GeneratePictureID() string {
 	return "PIC_" + time.Now().Format("20060102150405")
 }
