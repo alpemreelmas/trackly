@@ -85,7 +85,7 @@ func logError(requestID string, c *fiber.Ctx, appErr *AppError) {
 	case ErrorTypeValidation, ErrorTypeNotFound, ErrorTypeUnauthorized, ErrorTypeForbidden, ErrorTypeConflict:
 		// Client errors - log as info/warn
 		zap.L().Warn("Client error", fields...)
-	case ErrorTypeInternal, ErrorTypeDatabaseConnection, ErrorTypeDatabaseQuery:
+	case ErrorTypeInternal:
 		// Server errors - log as error
 		zap.L().Error("Server error", fields...)
 	case ErrorTypeExternal, ErrorTypeTimeout, ErrorTypeUnavailable:

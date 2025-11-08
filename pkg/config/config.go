@@ -8,9 +8,7 @@ import (
 
 type AppConfig struct {
 	Port              string `mapstructure:"port" yaml:"port"`
-	HttpServer        string `mapstructure:"http_server" yaml:"http_server"`
 	CouchbaseUrl      string `mapstructure:"couchbase_url" yaml:"couchbase_url"`
-	OtelTraceEndpoint string `mapstructure:"otel_trace_endpoint" yaml:"otel_trace_endpoint"`
 	CouchbaseUsername string `mapstructure:"couchbase_username" yaml:"couchbase_username"`
 	CouchbasePassword string `mapstructure:"couchbase_password" yaml:"couchbase_password"`
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/couchbase/gocb/v2"
@@ -15,8 +14,8 @@ import (
 )
 
 type VehicleRepository struct {
-	cluster *gocb.Cluster
-	bucket  *gocb.Bucket
+	cluster    *gocb.Cluster
+	bucket     *gocb.Bucket
 	collection *gocb.Collection
 }
 
@@ -32,7 +31,6 @@ func NewVehicleRepository(couchbaseUrl string, username string, password string)
 			Password: password,
 		},
 		Transcoder: gocb.NewJSONTranscoder(),
-		Tracer:     tracer,
 	})
 	if err != nil {
 		zap.L().Fatal("Failed to connect to couchbase", zap.Error(err))
@@ -40,7 +38,7 @@ func NewVehicleRepository(couchbaseUrl string, username string, password string)
 
 	bucket := cluster.Bucket("vehicles")
 	bucket.WaitUntilReady(10*time.Second, &gocb.WaitUntilReadyOptions{})
-	
+
 	collection := bucket.DefaultCollection()
 
 	return &VehicleRepository{
@@ -75,7 +73,7 @@ func (r *VehicleRepository) GetVehicle(ctx context.Context, id string) (*domain.
 // GetVehicleByVIN retrieves a vehicle by VIN using lookup operation
 func (r *VehicleRepository) GetVehicleByVIN(ctx context.Context, vin string) (*domain.Vehicle, error) {
 	vinKey := "vin::" + vin
-	
+
 	result, err := r.collection.Get(vinKey, &gocb.GetOptions{
 		Timeout: 5 * time.Second,
 		Context: ctx,
@@ -107,7 +105,7 @@ func (r *VehicleRepository) CreateVehicle(ctx context.Context, vehicle *domain.V
 	vinKey := "vin::" + vehicle.VIN
 	vinRef := map[string]string{"vehicle_id": vehicle.ID}
 
-	err := r.cluster.Transactions().Run(func(attempt *gocb.TransactionAttempt) error {
+	_, err := r.cluster.Transactions().Run(func(attempt *gocb.TransactionAttemptContext) error {
 		_, err := attempt.Insert(r.collection, vinKey, vinRef)
 		if err != nil {
 			return err
@@ -120,7 +118,7 @@ func (r *VehicleRepository) CreateVehicle(ctx context.Context, vehicle *domain.V
 
 		return nil
 	}, &gocb.TransactionOptions{
-		Timeout: 10 * time.Second,
+		Timeout:         10 * time.Second,
 		DurabilityLevel: gocb.DurabilityLevelMajority,
 	})
 
@@ -164,34 +162,98 @@ func (r *VehicleRepository) DeleteVehicle(ctx context.Context, id string) error 
 	return r.UpdateVehicle(ctx, vehicle)
 }
 
+// GetVehiclesByOwner retrieves all vehicles for a specific owner
+func (r *VehicleRepository) GetVehiclesByOwner(ctx context.Context, ownerID string) ([]*domain.Vehicle, error) {
+	if ownerID == "" {
+		return nil, apperrors.ErrInvalidID
+	}
+
+	query := `
+		SELECT v.* 
+		FROM vehicles v 
+		WHERE v.owner_id = $1 
+		AND v.status != 'inactive'
+		ORDER BY v.created_at DESC
+	`
+
+	result, err := r.cluster.Query(query, &gocb.QueryOptions{
+		PositionalParameters: []interface{}{ownerID},
+		Timeout:              10 * time.Second,
+		Context:              ctx,
+	})
+	if err != nil {
+		return nil, r.convertDBError("get_vehicles_by_owner", err)
+	}
+	defer result.Close()
+
+	var vehicles []*domain.Vehicle
+	for result.Next() {
+		var vehicle domain.Vehicle
+		if err := result.Row(&vehicle); err != nil {
+			zap.L().Error("Failed to decode vehicle row", zap.Error(err))
+			continue
+		}
+		vehicles = append(vehicles, &vehicle)
+	}
+
+	if err := result.Err(); err != nil {
+		return nil, r.convertDBError("get_vehicles_by_owner_iteration", err)
+	}
+
+	return vehicles, nil
+}
+
+// AddDocument adds a document to a vehicle
+func (r *VehicleRepository) AddDocument(ctx context.Context, vehicleID string, document domain.Document) error {
+	vehicle, err := r.GetVehicle(ctx, vehicleID)
+	if err != nil {
+		return err
+	}
+
+	// Add the document to the vehicle
+	if err := vehicle.AddDocument(document); err != nil {
+		return apperrors.ErrInvalidInput.WithDetails(map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	// Update the vehicle
+	return r.UpdateVehicle(ctx, vehicle)
+}
+
+// AddPicture adds a picture to a vehicle
+func (r *VehicleRepository) AddPicture(ctx context.Context, vehicleID string, picture domain.Picture) error {
+	vehicle, err := r.GetVehicle(ctx, vehicleID)
+	if err != nil {
+		return err
+	}
+
+	// Add the picture to the vehicle
+	if err := vehicle.AddPicture(picture); err != nil {
+		return apperrors.ErrInvalidInput.WithDetails(map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	// Update the vehicle
+	return r.UpdateVehicle(ctx, vehicle)
+}
+
 // convertDBError converts Couchbase errors to application errors
 func (r *VehicleRepository) convertDBError(operation string, err error) error {
-    var kvErr *gocb.KeyValueError
-    var timeoutErr *gocb.TimeoutError
-    var authErr *gocb.AuthenticationError
+	var timeoutErr *gocb.TimeoutError
 
-    switch {
-    case errors.Is(err, gocb.ErrDocumentNotFound):
-        return apperrors.ErrResourceNotFound.WithCause(err)
+	switch {
+	case errors.Is(err, gocb.ErrDocumentNotFound):
+		return apperrors.ErrResourceNotFound.WithCause(err)
 
-    case errors.Is(err, gocb.ErrDocumentExists):
-        return apperrors.ErrResourceExists.WithCause(err)
+	case errors.Is(err, gocb.ErrDocumentExists):
+		return apperrors.ErrResourceExists.WithCause(err)
 
-    case errors.As(err, &timeoutErr):
-        return apperrors.ErrRequestTimeout.WithCause(timeoutErr)
-
-    case errors.As(err, &authErr):
-        return apperrors.ErrUnauthorized.WithCause(authErr)
-
-    case errors.As(err, &kvErr):
-        // You can even inspect kvErr.InnerError or kvErr.Context
-        if kvErr.StatusCode == gocb.StatusNetworkError {
-            return apperrors.ErrDatabaseConnection.WithCause(kvErr)
-        }
-        return apperrors.NewDatabaseError(operation, kvErr)
-
-    default:
-        // If we can’t categorize it, just wrap it.
-        return apperrors.NewDatabaseError(operation, err)
-    }
+	case errors.As(err, &timeoutErr):
+		return apperrors.ErrRequestTimeout.WithCause(timeoutErr)
+	default:
+		// If we can’t categorize it, just wrap it.
+		return apperrors.NewDatabaseError(operation, err)
+	}
 }

@@ -4,22 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"net"
-	"net/http"
+	"microservicetest/app/vehicle"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"microservicetest/app/healthcheck"
-	"microservicetest/app/product"
 	"microservicetest/infra/couchbase"
 	"microservicetest/pkg/config"
 	apperrors "microservicetest/pkg/errors"
@@ -42,7 +37,6 @@ func RequestDurationMiddleware() fiber.Handler {
 		err := c.Next()
 
 		duration := time.Since(start).Seconds()
-		status := strconv.Itoa(c.Response().StatusCode())
 		requestID := c.Locals("requestID").(string)
 		zap.L().Info("Request completed",
 			zap.String("request_id", requestID),
@@ -108,12 +102,14 @@ func main() {
 	zap.L().Info("app starting...")
 	zap.L().Info("app config", zap.Any("appConfig", appConfig))
 
+	couchbaseRepository := couchbase.NewVehicleRepository(appConfig.CouchbaseUrl, appConfig.CouchbaseUsername, appConfig.CouchbasePassword)
 
-	couchbaseRepository := couchbase.NewCouchbaseRepository(tp, appConfig.CouchbaseUrl, appConfig.CouchbaseUsername, appConfig.CouchbasePassword)
-
-	getProductHandler := product.NewGetProductHandler(couchbaseRepository, retryClient, appConfig.HttpServer)
-	createProductHandler := product.NewCreateProductHandler(couchbaseRepository)
 	healthcheckHandler := healthcheck.NewHealthCheckHandler()
+
+	// Vehicle handlers
+	createVehicleHandler := vehicle.NewCreateVehicleHandler(couchbaseRepository)
+	getVehicleHandler := vehicle.NewGetVehicleHandler(couchbaseRepository)
+	updateVehicleHandler := vehicle.NewUpdateVehicleHandler(couchbaseRepository)
 
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  5 * time.Second,
@@ -125,10 +121,13 @@ func main() {
 	app.Use(RequestIDMiddleware())
 	app.Use(RequestDurationMiddleware())
 
+	// Health check endpoint
 	app.Get("/healthcheck", handle[healthcheck.HealthCheckRequest, healthcheck.HealthCheckResponse](healthcheckHandler))
 
-	app.Get("/products/:id", handle[product.GetProductRequest, product.GetProductResponse](getProductHandler))
-	app.Post("/products", handle[product.CreateProductRequest, product.CreateProductResponse](createProductHandler))
+	// Vehicle endpoints
+	app.Post("/vehicles", handle[vehicle.CreateVehicleRequest, vehicle.CreateVehicleResponse](createVehicleHandler))
+	app.Get("/vehicles/:id", handle[vehicle.GetVehicleRequest, vehicle.GetVehicleResponse](getVehicleHandler))
+	app.Put("/vehicles/:id", handle[vehicle.UpdateVehicleRequest, vehicle.UpdateVehicleResponse](updateVehicleHandler))
 
 	// Start server in a goroutine
 	go func() {

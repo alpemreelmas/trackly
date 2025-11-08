@@ -399,14 +399,14 @@ func (v *Vehicle) RemovePicture(pictureID string) error {
 // Factory methods
 
 // NewVehicle creates a new vehicle with default values
-func NewVehicle(vin, make, model string, year int, ownerID string) *Vehicle {
+func NewVehicle(vin, vehicleMake, vehicleModel string, year int, ownerID string) *Vehicle {
 	now := time.Now()
 	
 	return &Vehicle{
 		ID:        GenerateVehicleID(),
 		VIN:       vin,
-		Make:      make,
-		Model:     model,
+		Make:      vehicleMake,
+		Model:     vehicleModel,
 		Year:      year,
 		OwnerID:   ownerID,
 		Status:    VehicleStatusActive,
