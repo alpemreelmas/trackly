@@ -2,7 +2,6 @@ package errors
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -35,9 +34,6 @@ const (
 
 // Error implements the error interface
 func (e *AppError) Error() string {
-	if e.Cause != nil {
-		return fmt.Sprintf("%s: %v", e.Message, e.Cause)
-	}
 	return e.Message
 }
 
@@ -57,14 +53,16 @@ func (e *AppError) Is(target error) bool {
 
 // WithDetails adds additional details to the error
 func (e *AppError) WithDetails(details any) *AppError {
-	e.Details = details
-	return e
+	newErr := *e
+	newErr.Details = details
+	return &newErr
 }
 
 // WithCause adds a cause to the error
 func (e *AppError) WithCause(cause error) *AppError {
-	e.Cause = cause
-	return e
+	newErr := *e
+	newErr.Cause = cause
+	return &newErr
 }
 
 // New creates a new AppError

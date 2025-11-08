@@ -1,4 +1,0 @@
-port: 8080
-couchbase_url: "couchbases://cb.3ngoctwiu3ocyiqh.cloud.couchbase.com"
-couchbase_username: "Administrator"
-couchbase_password: "A6+$9rD~eZ-6"
