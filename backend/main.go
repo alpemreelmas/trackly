@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"microservicetest/app/gps"
 	"microservicetest/app/vehicle"
 	"microservicetest/infra/azure"
+	"microservicetest/infra/cosmos"
 	"os"
 	"os/signal"
 	"syscall"
@@ -169,6 +171,17 @@ func main() {
 
 	couchbaseRepository := couchbase.NewVehicleRepository(appConfig.CouchbaseUrl, appConfig.CouchbaseUsername, appConfig.CouchbasePassword)
 
+	// Initialize Cosmos DB repository for GPS data
+	cosmosRepository, err := cosmosdb.NewGPSRepository(
+		appConfig.CosmosDBEndpoint,
+		appConfig.CosmosDBKey,
+		appConfig.CosmosDBDatabase,
+		appConfig.CosmosDBContainer,
+	)
+	if err != nil {
+		zap.L().Error("Failed to initialize Cosmos DB repository", zap.Error(err))
+	}
+
 	healthcheckHandler := healthcheck.NewHealthCheckHandler()
 
 	// Vehicle handlers
@@ -179,6 +192,9 @@ func main() {
 	getDocumentHandler := vehicle.NewGetDocumentsHandler(couchbaseRepository)
 	deleteDocumentHandler := vehicle.NewDeleteDocumentHandler(couchbaseRepository, storageService)
 	downloadDocumentHandler := vehicle.NewDownloadDocumentHandler(couchbaseRepository, storageService)
+
+	// GPS handlers
+	getGPSDataHandler := gps.NewGetGPSDataHandler(cosmosRepository)
 
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  5 * time.Second,
@@ -201,6 +217,9 @@ func main() {
 	app.Get("/vehicles/:id/documents", handleFiberCtx[vehicle.GetDocumentsRequest, vehicle.GetDocumentsResponse](getDocumentHandler))
 	app.Get("/vehicles/:id/documents/:doc_id/download", handleRaw[vehicle.DownloadDocumentRequest](downloadDocumentHandler))
 	app.Delete("/vehicles/:id/documents/:doc_id", handleFiberCtx[vehicle.DeleteDocumentRequest, vehicle.DeleteDocumentResponse](deleteDocumentHandler))
+
+	// GPS endpoints
+	app.Get("/gps/data", handle[gps.GetGPSDataRequest, gps.GetGPSDataResponse](getGPSDataHandler))
 
 	// Start server in a goroutine
 	go func() {

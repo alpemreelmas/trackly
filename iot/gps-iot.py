@@ -7,7 +7,7 @@ from paho.mqtt import client as mqtt
 
 device_id = ""
 sas_token = ""
-iot_hub_name = "gps-trackly"
+iot_hub_name = ""
 
 # Corrected: Using actual Azure IoT Hub hostname
 hostname = f"{iot_hub_name}.azure-devices.net"

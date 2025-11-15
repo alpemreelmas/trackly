@@ -12,6 +12,10 @@ type AppConfig struct {
 	CouchbaseUsername     string `mapstructure:"couchbase_username" yaml:"couchbase_username"`
 	CouchbasePassword     string `mapstructure:"couchbase_password" yaml:"couchbase_password"`
 	AzureConnectionString string `mapstructure:"azure_connection_string" yaml:"azure_connection_string"`
+	CosmosDBEndpoint      string `mapstructure:"cosmosdb_endpoint" yaml:"cosmosdb_endpoint"`
+	CosmosDBKey           string `mapstructure:"cosmosdb_key" yaml:"cosmosdb_key"`
+	CosmosDBDatabase      string `mapstructure:"cosmosdb_database" yaml:"cosmosdb_database"`
+	CosmosDBContainer     string `mapstructure:"cosmosdb_container" yaml:"cosmosdb_container"`
 }
 
 func Read() *AppConfig {

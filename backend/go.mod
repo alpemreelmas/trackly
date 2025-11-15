@@ -3,6 +3,7 @@ module microservicetest
 go 1.24.0
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos v1.0.3
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.3.2
 	github.com/couchbase/gocb/v2 v2.9.3
 	github.com/go-playground/validator/v10 v10.28.0
@@ -13,6 +14,7 @@ require (
 )
 
 require (
+	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2 // indirect

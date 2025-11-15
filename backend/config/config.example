@@ -2,3 +2,8 @@ port: 8080
 couchbase_url: ""
 couchbase_username: ""
 couchbase_password: ""
+azure_connection_string: ""
+cosmosdb_endpoint: "https://your-account.documents.azure.com:443/"
+cosmosdb_key: "your-cosmosdb-key"
+cosmosdb_database: "trackly"
+cosmosdb_container: "gps_data"
