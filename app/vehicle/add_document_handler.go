@@ -13,17 +13,6 @@ import (
 
 type AddDocumentRequest struct {
 	VehicleID string `param:"id" validate:"required"`
-	//	Type           string  `formData:"type" validate:"required,oneof=insurance_policy insurance_card registration title inspection emission_test purchase_agreement service_record warranty receipt accident_report other"`
-	//	Name           string  `formData:"name" validate:"required,min=1,max=200"`
-	//	Description    string  `formData:"description" validate:"omitempty,max=500"`
-	//	FileName       string  `formData:"file_name" validate:"required,min=1,max=255"`
-	//	FileSize       int64   `formData:"file_size" validate:"required,gt=0"`
-	//	MimeType       string  `formData:"mime_type" validate:"required"`
-	//	ExpiryDate     *string `formData:"expiry_date" validate:"omitempty"`
-	//	IssuedDate     *string `formData:"issued_date" validate:"omitempty"`
-	//	IssuedBy       string  `formData:"issued_by" validate:"omitempty,max=100"`
-	//	DocumentNumber string  `formData:"document_number" validate:"omitempty,max=100"`
-	//	UploadedBy     string  `formData:"uploaded_by" validate:"required"`
 }
 
 type AddDocumentResponse struct {

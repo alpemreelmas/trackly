@@ -1,0 +1,315 @@
+{
+	"info": {
+		"_postman_id": "636c7385-f0f8-4f5a-96e7-9fc18c2e9afa",
+		"name": "Vehicle Management API",
+		"description": "Araç yönetim sistemi için API koleksiyonu. Araç oluşturma, güncelleme, sorgulama, doküman ve resim ekleme işlemlerini içerir.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14075793",
+		"_collection_link": "https://brossoft.postman.co/workspace/Hop-%26-MeTime~e25d24f8-41c1-4918-9521-83545faff058/collection/14075793-636c7385-f0f8-4f5a-96e7-9fc18c2e9afa?action=share&source=collection_link&creator=14075793"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/healthcheck",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"healthcheck"
+							]
+						},
+						"description": "Servisin sağlık durumunu kontrol eder"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Vehicles",
+			"item": [
+				{
+					"name": "Create Vehicle",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vin\": \"1HGBH41JXMN109186\",\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2023,\n  \"color\": \"Siyah\",\n  \"license_plate\": \"34ABC123\",\n  \"owner_id\": \"owner_001\",\n  \"owner_name\": \"Ahmet Yılmaz\",\n  \"owner_email\": \"ahmet@example.com\",\n  \"owner_phone\": \"+905551234567\",\n  \"transmission\": \"automatic\",\n  \"fuel_type\": \"gasoline\",\n  \"mileage\": 15000,\n  \"created_by\": \"admin_001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"vehicles"
+							]
+						},
+						"description": "Yeni bir araç kaydı oluşturur"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Vehicle by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/vehicles/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"vehicles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "VEH_20251108175221",
+									"description": "Araç ID"
+								}
+							]
+						},
+						"description": "ID'ye göre araç bilgilerini getirir"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Vehicles by Owner",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/vehicles/owner/:owner_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"vehicles",
+								"owner",
+								":owner_id"
+							],
+							"variable": [
+								{
+									"key": "owner_id",
+									"value": "owner_001",
+									"description": "Araç sahibi ID"
+								}
+							]
+						},
+						"description": "Belirli bir sahibin tüm araçlarını listeler"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Vehicle",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"color\": \"Beyaz\",\n  \"license_plate\": \"34XYZ789\",\n  \"owner_name\": \"Alp Emre\",\n  \"owner_email\": \"mehmet@example.com\",\n  \"owner_phone\": \"+905559876543\",\n  \"transmission\": \"automatic\",\n  \"mileage\": 25000,\n  \"status\": \"active\",\n  \"updated_by\": \"admin_001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/vehicles/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"vehicles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "VEH_20251108175221",
+									"description": "Araç ID"
+								}
+							]
+						},
+						"description": "Mevcut araç bilgilerini günceller. Sadece gönderilen alanlar güncellenir."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Documents",
+			"item": [
+				{
+					"name": "Add Documents",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "type",
+									"value": " insurance_policy",
+									"type": "text"
+								},
+								{
+									"key": "name",
+									"value": " Kasko Poliçesi 2023",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": " Tam kasko sigortası",
+									"type": "text"
+								},
+								{
+									"key": "file_name",
+									"value": " insurance_policy_001.pdf",
+									"type": "text"
+								},
+								{
+									"key": "file_size",
+									"value": " 524288",
+									"type": "text"
+								},
+								{
+									"key": "mime_type",
+									"value": " application/pdf",
+									"type": "text"
+								},
+								{
+									"key": "expiry_date",
+									"value": "2025-12-31T23:59:59Z",
+									"type": "text"
+								},
+								{
+									"key": "issued_date",
+									"value": "2023-01-01T00:00:00Z",
+									"type": "text"
+								},
+								{
+									"key": "issued_by",
+									"value": " ABC Sigorta A.Ş.",
+									"type": "text"
+								},
+								{
+									"key": "document_number",
+									"value": " POL-2023-001234",
+									"type": "text"
+								},
+								{
+									"key": "uploaded_by",
+									"value": " admin_001",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/home/aee/Desktop/University/IoT/trackly/docs/Vehicle_Management_API.postman_collection.json"
+								},
+								{
+									"key": "vehicleid",
+									"value": "VEH_20251108175221",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/vehicles/:id/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"vehicles",
+								":id",
+								"documents"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "VEH_20251108175221",
+									"description": "Araç ID"
+								}
+							]
+						},
+						"description": "Araca sigorta poliçesi ekler"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Documents",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/vehicles/:id/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"vehicles",
+								":id",
+								"documents"
+							],
+							"query": [
+								{
+									"key": "is_verified",
+									"value": "false",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "VEH_20251108175221"
+								}
+							]
+						},
+						"description": "Araca sigorta poliçesi ekler"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

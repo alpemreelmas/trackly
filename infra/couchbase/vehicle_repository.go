@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/couchbase/gocb/v2"
 	"go.uber.org/zap"
 
+	"microservicetest/app/vehicle"
 	"microservicetest/domain"
 	apperrors "microservicetest/pkg/errors"
 )
@@ -218,6 +220,77 @@ func (r *VehicleRepository) AddDocument(ctx context.Context, vehicleID string, d
 	}
 
 	// Update the vehicle
+	return r.UpdateVehicle(ctx, vehicle)
+}
+
+// GetDocuments retrieves documents for a vehicle with optional filters
+func (r *VehicleRepository) GetDocuments(ctx context.Context, vehicleID string, filter vehicle.DocumentFilter) ([]domain.Document, error) {
+	vehicle, err := r.GetVehicle(ctx, vehicleID)
+	if err != nil {
+		return nil, err
+	}
+
+	if vehicle.Documents == nil {
+		return []domain.Document{}, nil
+	}
+
+	// Apply filters
+	filtered := make([]domain.Document, 0, len(vehicle.Documents))
+	now := time.Now()
+
+	for _, doc := range vehicle.Documents {
+		// Filter by type (trim spaces for comparison)
+		if filter.Type != "" && strings.TrimSpace(string(doc.Type)) != filter.Type {
+			continue
+		}
+
+		// Filter by verification status
+		if filter.IsVerified != nil && doc.IsVerified != *filter.IsVerified {
+			continue
+		}
+
+		// Filter by expiration status
+		if filter.IsExpired != nil {
+			isExpired := doc.ExpiryDate != nil && doc.ExpiryDate.Before(now)
+			if isExpired != *filter.IsExpired {
+				continue
+			}
+		}
+
+		// Filter by uploaded_by
+		if filter.UploadedBy != "" && doc.UploadedBy != filter.UploadedBy {
+			continue
+		}
+
+		// Filter by issued_by
+		if filter.IssuedBy != "" && doc.IssuedBy != filter.IssuedBy {
+			continue
+		}
+
+		// Filter by document_number
+		if filter.DocumentNumber != "" && doc.DocumentNumber != filter.DocumentNumber {
+			continue
+		}
+
+		filtered = append(filtered, doc)
+	}
+
+	return filtered, nil
+}
+
+// DeleteDocument removes a document from a vehicle
+func (r *VehicleRepository) DeleteDocument(ctx context.Context, vehicleID string, documentID string) error {
+	vehicle, err := r.GetVehicle(ctx, vehicleID)
+	if err != nil {
+		return err
+	}
+
+	if err := vehicle.RemoveDocument(documentID); err != nil {
+		return apperrors.ErrInvalidInput.WithDetails(map[string]string{
+			"error": err.Error(),
+		})
+	}
+
 	return r.UpdateVehicle(ctx, vehicle)
 }
 

@@ -135,6 +135,27 @@ func handleFiberCtx[R Request, Res Response](handler HandlerCtxInterface[R, Res]
 	}
 }
 
+// Handler interface for raw fiber context (no response struct)
+type HandlerRawInterface[R Request] interface {
+	Handle(ctx *fiber.Ctx, req *R) error
+}
+
+func handleRaw[R Request](handler HandlerRawInterface[R]) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var req R
+
+		if err := c.ParamsParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		if err := c.QueryParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		return handler.Handle(c, &req)
+	}
+}
+
 func main() {
 	appConfig := config.Read()
 	defer zap.L().Sync()
@@ -155,6 +176,9 @@ func main() {
 	getVehicleHandler := vehicle.NewGetVehicleHandler(couchbaseRepository)
 	updateVehicleHandler := vehicle.NewUpdateVehicleHandler(couchbaseRepository)
 	addDocumentHandler := vehicle.NewAddDocumentHandler(couchbaseRepository, storageService)
+	getDocumentHandler := vehicle.NewGetDocumentsHandler(couchbaseRepository)
+	deleteDocumentHandler := vehicle.NewDeleteDocumentHandler(couchbaseRepository, storageService)
+	downloadDocumentHandler := vehicle.NewDownloadDocumentHandler(couchbaseRepository, storageService)
 
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  5 * time.Second,
@@ -174,6 +198,9 @@ func main() {
 	app.Get("/vehicles/:id", handle[vehicle.GetVehicleRequest, vehicle.GetVehicleResponse](getVehicleHandler))
 	app.Put("/vehicles/:id", handle[vehicle.UpdateVehicleRequest, vehicle.UpdateVehicleResponse](updateVehicleHandler))
 	app.Post("/vehicles/:id/documents", handleFiberCtx[vehicle.AddDocumentRequest, vehicle.AddDocumentResponse](addDocumentHandler))
+	app.Get("/vehicles/:id/documents", handleFiberCtx[vehicle.GetDocumentsRequest, vehicle.GetDocumentsResponse](getDocumentHandler))
+	app.Get("/vehicles/:id/documents/:doc_id/download", handleRaw[vehicle.DownloadDocumentRequest](downloadDocumentHandler))
+	app.Delete("/vehicles/:id/documents/:doc_id", handleFiberCtx[vehicle.DeleteDocumentRequest, vehicle.DeleteDocumentResponse](deleteDocumentHandler))
 
 	// Start server in a goroutine
 	go func() {

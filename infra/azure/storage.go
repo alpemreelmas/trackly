@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	apperrors "microservicetest/pkg/errors"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
@@ -85,6 +86,49 @@ func (s *Storage) Upload(ctx context.Context, file io.Reader, filename string, c
 	}
 
 	return s.URL(filename), nil
+}
+
+// Download file from Azure Blob Storage
+func (s *Storage) Download(ctx context.Context, filename string) ([]byte, string, error) {
+	// Get blob client
+	blobClient := s.client.ServiceClient().NewContainerClient(s.containerName).NewBlobClient(filename)
+
+	// Download blob
+	resp, err := blobClient.DownloadStream(ctx, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download blob: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read content
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read blob content: %w", err)
+	}
+
+	// Get content type
+	contentType := ""
+	if resp.ContentType != nil {
+		contentType = *resp.ContentType
+	}
+
+	return data, contentType, nil
+}
+
+// Remove deletes a file from Azure Blob Storage
+func (s *Storage) Remove(ctx context.Context, filename string) error {
+	// Get blob client
+	blobClient := s.client.ServiceClient().NewContainerClient(s.containerName).NewBlobClient(filename)
+
+	// Delete blob
+	_, err := blobClient.Delete(ctx, nil)
+	if err != nil {
+		return apperrors.ErrInternalServer.WithCause(err).WithDetails(map[string]string{
+			"operation": "remove_doc",
+		})
+	}
+
+	return nil
 }
 
 // generateUploadSAS creates a SAS token for uploading a blob

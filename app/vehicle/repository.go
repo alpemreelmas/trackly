@@ -17,6 +17,8 @@ type Repository interface {
 
 	// Document operations
 	AddDocument(ctx context.Context, vehicleID string, document domain.Document) error
+	GetDocuments(ctx context.Context, vehicleID string, filter DocumentFilter) ([]domain.Document, error)
+	DeleteDocument(ctx context.Context, vehicleID string, documentID string) error
 
 	// Picture operations
 	AddPicture(ctx context.Context, vehicleID string, picture domain.Picture) error
