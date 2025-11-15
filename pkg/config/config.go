@@ -7,10 +7,11 @@ import (
 )
 
 type AppConfig struct {
-	Port              string `mapstructure:"port" yaml:"port"`
-	CouchbaseUrl      string `mapstructure:"couchbase_url" yaml:"couchbase_url"`
-	CouchbaseUsername string `mapstructure:"couchbase_username" yaml:"couchbase_username"`
-	CouchbasePassword string `mapstructure:"couchbase_password" yaml:"couchbase_password"`
+	Port                  string `mapstructure:"port" yaml:"port"`
+	CouchbaseUrl          string `mapstructure:"couchbase_url" yaml:"couchbase_url"`
+	CouchbaseUsername     string `mapstructure:"couchbase_username" yaml:"couchbase_username"`
+	CouchbasePassword     string `mapstructure:"couchbase_password" yaml:"couchbase_password"`
+	AzureConnectionString string `mapstructure:"azure_connection_string" yaml:"azure_connection_string"`
 }
 
 func Read() *AppConfig {

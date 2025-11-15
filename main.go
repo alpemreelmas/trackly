@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"microservicetest/app/vehicle"
+	"microservicetest/infra/azure"
 	"os"
 	"os/signal"
 	"syscall"
@@ -59,6 +60,10 @@ type HandlerInterface[R Request, Res Response] interface {
 	Handle(ctx context.Context, req *R) (*Res, error)
 }
 
+type HandlerCtxInterface[R Request, Res Response] interface {
+	Handle(ctx *fiber.Ctx, req *R) (*Res, error)
+}
+
 // Update handle function to accept HandlerInterface instead of Handler function
 func handle[R Request, Res Response](handler HandlerInterface[R, Res]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -96,11 +101,50 @@ func handle[R Request, Res Response](handler HandlerInterface[R, Res]) fiber.Han
 	}
 }
 
+func handleFiberCtx[R Request, Res Response](handler HandlerCtxInterface[R, Res]) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var req R
+
+		if err := c.BodyParser(&req); err != nil && !errors.Is(err, fiber.ErrUnprocessableEntity) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		if err := c.ParamsParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		if err := c.QueryParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		if err := c.ReqHeaderParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		/*
+			ctx, cancel := context.WithTimeout(c.UserContext(), 3*time.Second)
+			defer cancel()
+		*/
+
+		res, err := handler.Handle(c, &req)
+		if err != nil {
+			return apperrors.HandleError(c, err)
+		}
+
+		return c.JSON(res)
+	}
+}
+
 func main() {
 	appConfig := config.Read()
 	defer zap.L().Sync()
 	zap.L().Info("app starting...")
 	zap.L().Info("app config", zap.Any("appConfig", appConfig))
+
+	storageService, err := azure.NewStorage(appConfig.AzureConnectionString, "documents")
+	if err != nil {
+		zap.L().Error("Failed to initialize Azure Blob service", zap.Error(err))
+	}
 
 	couchbaseRepository := couchbase.NewVehicleRepository(appConfig.CouchbaseUrl, appConfig.CouchbaseUsername, appConfig.CouchbasePassword)
 
@@ -110,6 +154,7 @@ func main() {
 	createVehicleHandler := vehicle.NewCreateVehicleHandler(couchbaseRepository)
 	getVehicleHandler := vehicle.NewGetVehicleHandler(couchbaseRepository)
 	updateVehicleHandler := vehicle.NewUpdateVehicleHandler(couchbaseRepository)
+	addDocumentHandler := vehicle.NewAddDocumentHandler(couchbaseRepository, storageService)
 
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  5 * time.Second,
@@ -128,6 +173,7 @@ func main() {
 	app.Post("/vehicles", handle[vehicle.CreateVehicleRequest, vehicle.CreateVehicleResponse](createVehicleHandler))
 	app.Get("/vehicles/:id", handle[vehicle.GetVehicleRequest, vehicle.GetVehicleResponse](getVehicleHandler))
 	app.Put("/vehicles/:id", handle[vehicle.UpdateVehicleRequest, vehicle.UpdateVehicleResponse](updateVehicleHandler))
+	app.Post("/vehicles/:id/documents", handleFiberCtx[vehicle.AddDocumentRequest, vehicle.AddDocumentResponse](addDocumentHandler))
 
 	// Start server in a goroutine
 	go func() {
