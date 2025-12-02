@@ -36,17 +36,9 @@
 | **UC-006: Retrieve Documents** | Owner/Manager views list of documents associated with a vehicle | Vehicle Owner, Manager |
 | **UC-007: Download Document** | User downloads a specific vehicle document | Vehicle Owner, Manager |
 | **UC-008: Delete Document** | Owner removes expired or outdated documents from the system | Vehicle Owner, System |
-| **UC-009: Verify Documents** | Administrator verifies authenticity of uploaded documents | System Administrator |
 
-### **3. Media Management**
 
-| Use Case | Description | Actors |
-|----------|-------------|--------|
-| **UC-010: Upload Vehicle Pictures** | Owner uploads vehicle photos (exterior, interior, damage, engine) | Vehicle Owner, System |
-| **UC-011: Set Main Picture** | Owner designates primary vehicle image for display | Vehicle Owner, System |
-| **UC-012: Organize Pictures** | Owner orders and categorizes vehicle images | Vehicle Owner, System |
-
-### **4. GPS Tracking**
+### **3. GPS Tracking**
 
 | Use Case | Description | Actors |
 |----------|-------------|--------|
@@ -54,7 +46,7 @@
 | **UC-014: Query GPS Data** | Manager retrieves GPS location history for a vehicle | Fleet Manager, System |
 | **UC-015: Track Vehicle Location** | User monitors current vehicle location in real-time | Vehicle Owner, Manager |
 
-### **5. System Health**
+### **4. System Health**
 
 | Use Case | Description | Actors |
 |----------|-------------|--------|
@@ -71,11 +63,9 @@
 2. **Upload insurance documents** - ...upload my insurance policy and documents so I have a centralized backup and can easily access them.
 3. **Monitor insurance expiration** - ...receive alerts when my insurance is about to expire so I can renew it on time.
 4. **Track vehicle location** - ...see my vehicle's real-time location to monitor its whereabouts and movement.
-5. **Upload vehicle photos** - ...upload photos of my vehicle (exterior, interior, damage) for record-keeping and insurance claims.
-6. **Set a main picture** - ...designate a primary vehicle image that represents my vehicle in the system.
-7. **Manage vehicle documents** - ...store and organize all vehicle documents (registration, title, inspection, warranty) in one place.
-8. **Download documents** - ...easily download any stored document when needed for insurance claims or authorities.
-9. **Update vehicle information** - ...modify vehicle specifications or owner contact details when circumstances change.
+5. **Manage vehicle documents** - ...store and organize all vehicle documents (registration, title, inspection, warranty) in one place.
+6. **Download documents** - ...easily download any stored document when needed for insurance claims or authorities.
+7. **Update vehicle information** - ...modify vehicle specifications or owner contact details when circumstances change.
 
 ### **Fleet Manager Persona**
 *"As a fleet manager, I want to..."*
@@ -110,10 +100,6 @@
 - Insurance expiration monitoring
 - Active status tracking
 - Insurance provider contact information
-- **Business Rules:**
-  - System alerts when insurance expires
-  - System alerts when insurance expires within 30 days
-  - Insurance status can be: inactive, expired, expiring_soon, or active
 
 ### **Document Management**
 - Support for 12 document types: Insurance Policy, Insurance Card, Registration, Title, Inspection, Emission Test, Purchase Agreement, Service Record, Warranty, Receipt, Accident Report, Other
@@ -125,14 +111,6 @@
   - Verification status tracking
   - Document status: no_documents, has_expired, has_expiring, up_to_date
 
-### **Media Management**
-- 13 picture types: Exterior (front, back, left, right), Interior (front, back), Dashboard, Engine, Trunk, Wheels, Damage, Accident, Other
-- Main/primary picture selection
-- Picture sorting and ordering
-- Thumbnail support
-- **Business Rules:**
-  - Only one main picture per vehicle
-  - First picture automatically marked as main if none exists
 
 ### **GPS Tracking**
 - Real-time location data collection from IoT devices
@@ -184,7 +162,6 @@ Vehicle
 ├── Engine Specifications
 ├── Insurance Info
 ├── Documents[] (Type, Name, File Reference)
-├── Pictures[] (Type, URL, Main Flag)
 └── Status & Timestamps
 
 GPSData
@@ -200,9 +177,8 @@ GPSData
 ### **Vehicle Onboarding Process**
 1. Owner creates vehicle record
 2. Owner uploads vehicle documents
-3. Owner uploads vehicle photos
-4. System initializes GPS tracking for vehicle
-5. Fleet manager reviews and activates vehicle
+3. System initializes GPS tracking for vehicle
+4. Fleet manager reviews and activates vehicle
 
 ### **Document Lifecycle**
 1. Owner uploads document
@@ -215,23 +191,13 @@ GPSData
 ### **GPS Tracking Workflow**
 1. IoT device initializes with device ID
 2. GPS device sends location data via MQTT to Azure IoT Hub
-3. Backend receives and stores in Cosmos DB
+3.Stores in Cosmos DB
 4. Fleet manager queries historical or real-time data via API
 5. System maintains location history for audit trails
 
 ---
 
-## 📈 Success Metrics
 
-- System uptime and availability
-- Document upload and verification processing time
-- GPS data ingestion latency
-- User engagement with vehicle tracking features
-- Document compliance rate (no expired documents)
-- Insurance renewal rate
-- Fleet vehicle status accuracy
-
----
 
 ## 🚀 Future Enhancements (Roadmap)
 
@@ -245,10 +211,3 @@ GPSData
 - **Integration with External APIs** - Weather, traffic, and road condition services
 
 ---
-
-## 📝 Document Information
-
-- **Project Name:** Trackly
-- **Version:** 1.0
-- **Created:** November 28, 2025
-- **Last Updated:** November 28, 2025
